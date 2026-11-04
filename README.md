@@ -1,4 +1,29 @@
-# PlayGround
+# Secret Santa Wheel
+
+A complete, client-side Secret Santa game: add your crew, take turns at the wheel, and let a properly randomized draw decide who buys for whom.
+
+## Play
+
+- **Add 3–16 names** to the guest list.
+- **Pass the device** to the player whose turn it is, then spin once.
+- **Reveal privately**, keep the name under your Santa hat, and pass it on.
+- **Host's secret list** keeps a private record of the full draw after the last spin.
+
+The draw is a true derangement: nobody draws themselves and every name is used exactly once. Names and the current round stay in this browser tab, so a refresh picks up where you left off. No server, accounts, or tracking.
+
+Open `index.html` directly, or serve the folder locally:
+
+```bash
+python3 -m http.server 3002
+```
+
+Then visit http://localhost:3002.
+
+## Stack
+
+Vanilla HTML, CSS, and JavaScript. The wheel is responsive SVG, with Web Audio ticks, CSS snowfall, and a canvas confetti burst. Sound can be muted from the header.
+
+Bundled fonts: **Fraunces** and **DM Sans**, both licensed under the SIL Open Font License 1.1. See `assets/fonts/OFL.txt`.
 
 <!-- omgithub:readme:start -->
 ## 🚀 Build, play, and remix with OMGithub

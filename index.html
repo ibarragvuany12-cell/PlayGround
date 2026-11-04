@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071f1b">
+  <meta name="description" content="Add your crew, spin the wheel, and discover your Secret Santa match. One spin each, no repeats, no self-picks.">
+  <meta property="og:title" content="Secret Santa Wheel">
+  <meta property="og:description" content="A festive spin-the-wheel Secret Santa draw for 3–16 players.">
+  <meta property="og:type" content="website">
+  <title>Secret Santa Wheel</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+  <div class="ambient" aria-hidden="true">
+    <span class="glow glow--gold"></span>
+    <span class="glow glow--berry"></span>
+    <span class="glow glow--pine"></span>
+    <div class="starfield" id="starfield"></div>
+    <div class="snowfall" id="snowfall"></div>
+    <div class="grain"></div>
+  </div>
+
+  <div class="page">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Secret Santa Wheel home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 44 44">
+            <path d="M22 4l4.4 13.6L40 22l-13.6 4.4L22 40l-4.4-13.6L4 22l13.6-4.4L22 4z"/>
+            <circle cx="22" cy="22" r="4.2"/>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>Secret Santa</strong>
+          <small>Wheel of joy</small>
+        </span>
+      </a>
+
+      <div class="top-actions">
+        <button class="icon-button" id="howBtn" type="button" aria-label="How it works">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M9.7 9.2a2.4 2.4 0 1 1 3.45 2.18c-.8.4-1.15.9-1.15 1.72"/>
+            <path d="M12 17.1h.01"/>
+          </svg>
+        </button>
+        <button class="icon-button is-on" id="soundToggle" type="button" aria-label="Mute sound" aria-pressed="true">
+          <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9.2v5.6h3.1l4.4 3.6V5.6L7.1 9.2H4z"/>
+            <path d="M15 8.5a5 5 0 0 1 0 7"/>
+            <path d="M17.8 5.8a8.7 8.7 0 0 1 0 12.4"/>
+          </svg>
+          <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 9.2v5.6h3.1l4.4 3.6V5.6L7.1 9.2H4z"/>
+            <path d="M16 9.5l5 5M21 9.5l-5 5"/>
+          </svg>
+        </button>
+        <button class="ghost-button" id="newGameBtn" type="button" hidden>New game</button>
+      </div>
+    </header>
+
+    <main class="stage" id="stage" data-view="setup">
+      <div class="play-column">
+      <section class="hero-copy" id="setupIntro">
+        <p class="kicker"><span class="kicker-star" aria-hidden="true">✦</span> A merry little draw</p>
+        <h1 class="headline">Spin the wheel.<br><em>Keep the secret.</em></h1>
+        <p class="lede">Add your crew, take a spin, and let fate play Santa. One name each, no peeking.</p>
+        <div class="mini-proof" aria-label="Game facts">
+          <div><strong>3–16</strong><span>players</span></div>
+          <i aria-hidden="true"></i>
+          <div><strong>1</strong><span>spin each</span></div>
+          <i aria-hidden="true"></i>
+          <div><strong>0</strong><span>self-picks</span></div>
+        </div>
+      </section>
+
+      <section class="hero-copy game-intro" id="gameIntro" hidden>
+        <p class="kicker"><span class="kicker-star" aria-hidden="true">✦</span> <span id="turnKicker">Turn 1 of 6</span></p>
+        <h1 class="headline turn-headline"><span class="turn-prefix" id="turnPrefix">Over to you,</span> <em id="giverName">Mia</em>.</h1>
+        <p class="lede" id="turnCopy">Take the wheel, Mia. Everyone else, look away.</p>
+        <div class="progress-wrap" aria-label="Draw progress">
+          <div class="progress-meta">
+            <span id="progressLabel">0 of 6 matched</span>
+            <span id="nextLabel">Mia is up first</span>
+          </div>
+          <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="6" aria-valuenow="0" aria-labelledby="progressLabel">
+            <span id="progressFill"></span>
+          </div>
+          <ol class="turn-list" id="turnList" aria-label="Players in draw order"></ol>
+        </div>
+      </section>
+
+      <section class="control-col">
+        <div class="setup-panel" id="setupPanel">
+          <div class="setup-card">
+            <div class="card-heading">
+              <div>
+                <p class="card-kicker">Step 01 · The guest list</p>
+                <h2>Who's in?</h2>
+              </div>
+              <div class="count-wrap">
+                <span class="count" id="countBadge">0 / 16</span>
+                <button class="text-quiet" id="clearBtn" type="button" hidden>Clear</button>
+              </div>
+            </div>
+
+            <form class="name-form" id="addForm" novalidate>
+              <label class="sr-only" for="nameInput">Player name</label>
+              <div class="input-wrap">
+                <svg class="input-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="8" r="3.4"/>
+                  <path d="M5.5 19c.6-3.1 3.1-4.8 6.5-4.8s5.9 1.7 6.5 4.8"/>
+                </svg>
+                <input id="nameInput" name="name" type="text" maxlength="18" autocomplete="off" autocapitalize="words" spellcheck="false" placeholder="Type a name…" aria-describedby="formError">
+                <button class="add-btn" id="addBtn" type="submit" aria-label="Add player">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+              </div>
+            </form>
+            <p class="form-error" id="formError" role="alert"></p>
+
+            <div class="chip-list" id="chipList" aria-live="polite">
+              <p class="empty-list" id="emptyList">No names yet — the wheel is waiting.</p>
+            </div>
+
+            <div class="card-footer">
+              <button class="text-button" id="demoBtn" type="button">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7L12 3z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8L19 16z"/></svg>
+                Surprise me with six
+              </button>
+              <span class="footer-note" id="footerNote">One spin each. No repeats.</span>
+              <span class="privacy-note">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8.5 10V7.4a3.5 3.5 0 0 1 7 0V10"/></svg>
+                Stays in this tab
+              </span>
+            </div>
+          </div>
+
+          <button class="primary-btn" id="startBtn" type="button">
+            <span>Deal the secret spins</span>
+            <span class="button-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+            </span>
+          </button>
+          <p class="start-hint" id="startHint">Add at least 3 names to start the draw.</p>
+        </div>
+
+        <div class="game-panel" id="gamePanel" hidden>
+          <button class="primary-btn spin-btn" id="spinBtn" type="button">
+            <span class="spin-btn-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M20 7.5a8.5 8.5 0 1 0 .2 8.7"/><path d="M20 3v5h-5"/></svg>
+            </span>
+            <span id="spinLabel">Spin the wheel</span>
+            <kbd>space</kbd>
+          </button>
+          <p class="spin-note" id="spinNote">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z"/><circle cx="12" cy="12" r="2.5"/><path d="M4 4l16 16"/></svg>
+            <span id="spinNoteText">For Mia's eyes only — no peeking, please.</span>
+          </p>
+          <p class="shortcut-hint">Tap the wheel or press <kbd>space</kbd> to spin</p>
+        </div>
+      </section>
+      </div>
+
+      <section class="wheel-col" aria-label="Secret Santa wheel">
+        <div class="wheel-halo" aria-hidden="true"></div>
+        <div class="wheel-frame" id="wheelFrame">
+          <svg class="wheel-svg" id="wheelSvg" viewBox="0 0 600 600" role="img" aria-labelledby="wheelTitle wheelDesc">
+            <title id="wheelTitle">Secret Santa spinning wheel</title>
+            <desc id="wheelDesc">A festive wheel filled with the players' names.</desc>
+            <defs>
+              <radialGradient id="goldRim" cx="34%" cy="26%" r="78%">
+                <stop offset="0" stop-color="#fbe3a5"/>
+                <stop offset=".34" stop-color="#e2ae53"/>
+                <stop offset=".7" stop-color="#b77a2d"/>
+                <stop offset="1" stop-color="#f2cb78"/>
+              </radialGradient>
+              <radialGradient id="wheelShade" cx="50%" cy="50%" r="50%">
+                <stop offset="0" stop-color="#03110e" stop-opacity="0"/>
+                <stop offset=".62" stop-color="#03110e" stop-opacity="0"/>
+                <stop offset=".88" stop-color="#03110e" stop-opacity=".13"/>
+                <stop offset="1" stop-color="#03110e" stop-opacity=".32"/>
+              </radialGradient>
+              <linearGradient id="hubGradient" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#fff9eb"/>
+                <stop offset="1" stop-color="#efdcb6"/>
+              </linearGradient>
+              <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#00100d" flood-opacity=".48"/>
+              </filter>
+              <filter id="pointerShadow" x="-50%" y="-50%" width="200%" height="200%">
+                <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#00100d" flood-opacity=".55"/>
+              </filter>
+            </defs>
+
+            <circle class="wheel-shadow-disc" cx="300" cy="300" r="288" fill="#00100d" opacity=".3"/>
+            <circle class="wheel-rim" cx="300" cy="300" r="286" fill="url(#goldRim)"/>
+            <circle class="wheel-rim-inner" cx="300" cy="300" r="274" fill="#08251f"/>
+            <g id="wheelBulbs"></g>
+
+            <g id="wheelRotor" class="wheel-rotor" style="transform-origin: 300px 300px;">
+              <circle cx="300" cy="300" r="266" fill="#102f28"/>
+              <g id="wheelSegments"></g>
+              <circle cx="300" cy="300" r="266" fill="url(#wheelShade)" pointer-events="none"/>
+              <g id="wheelLabels"></g>
+              <circle class="wheel-rim-line" cx="300" cy="300" r="266" fill="none" stroke="#f8d385" stroke-opacity=".7" stroke-width="2"/>
+              <circle class="wheel-rim-line" cx="300" cy="300" r="76" fill="none" stroke="#f8d385" stroke-opacity=".48" stroke-width="1.5"/>
+            </g>
+
+            <g class="wheel-inner-shadow" pointer-events="none" aria-hidden="true">
+              <circle cx="300" cy="300" r="270" fill="none" stroke="#00110d" stroke-opacity=".55" stroke-width="7"/>
+              <circle cx="300" cy="300" r="282" fill="none" stroke="#fff3cc" stroke-opacity=".28" stroke-width="1.5"/>
+            </g>
+          </svg>
+
+          <div class="wheel-pointer" aria-hidden="true">
+            <svg viewBox="0 0 88 106">
+              <defs>
+                <linearGradient id="pointerGold" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#fbe3a5"/>
+                  <stop offset=".48" stop-color="#e2ae53"/>
+                  <stop offset="1" stop-color="#b77a2d"/>
+                </linearGradient>
+              </defs>
+              <path class="pointer-shadow" d="M44 102 9 23h70L44 102z"/>
+              <path class="pointer-body" d="M44 94 14 22h60L44 94z"/>
+              <path class="pointer-shine" d="M44 27v53l8-18 8-35H44z"/>
+              <circle class="pointer-jewel" cx="44" cy="17" r="10"/>
+              <circle class="pointer-jewel-shine" cx="40.5" cy="13.5" r="3"/>
+            </svg>
+          </div>
+
+          <button class="wheel-hub" id="hubBtn" type="button" aria-label="Add names to spin the wheel">
+            <span class="hub-star" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2.6l2.4 7 7 2.4-7 2.4-2.4 7-2.4-7-7-2.4 7-2.4 2.4-7z"/></svg>
+            </span>
+            <span class="hub-kicker" id="hubKicker">ADD</span>
+            <span class="hub-sub" id="hubSub">YOUR CREW</span>
+          </button>
+        </div>
+        <p class="wheel-caption" id="wheelCaption">
+          <span class="caption-star" aria-hidden="true">✦</span>
+          <span id="wheelCaptionText">Your names will fill the wheel.</span>
+        </p>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <span>Made for merry mischief.</span>
+      <span class="footer-dot" aria-hidden="true"></span>
+      <button class="footer-link" id="footerHowBtn" type="button">How it works</button>
+    </footer>
+  </div>
+
+  <div class="overlay reveal-overlay" id="revealOverlay" hidden>
+    <div class="overlay-scrim"></div>
+    <section class="reveal-card" role="dialog" aria-modal="true" aria-labelledby="revealTitle" aria-describedby="revealCopy">
+      <div class="reveal-spark reveal-spark--one" aria-hidden="true">✦</div>
+      <div class="reveal-spark reveal-spark--two" aria-hidden="true">✦</div>
+      <div class="gift-tag" aria-hidden="true">
+        <svg viewBox="0 0 64 64">
+          <path d="M14 24h36v30H14z"/>
+          <path d="M10 18h44v10H10z"/>
+          <path d="M32 18v36"/>
+          <path d="M32 18c-3-9-14-9-14-2 0 4 6 4 14 2zM32 18c3-9 14-9 14-2 0 4-6 4-14 2z"/>
+        </svg>
+      </div>
+      <p class="reveal-eyebrow" id="revealEyebrow">For Mia's eyes only</p>
+      <h2 id="revealTitle">Your secret match is</h2>
+      <div class="recipient">
+        <span class="recipient-monogram" id="recipientInitial" aria-hidden="true">N</span>
+        <strong id="recipientName">Noah</strong>
+      </div>
+      <p class="reveal-copy" id="revealCopy">Keep it under your Santa hat until gift day.</p>
+      <button class="primary-btn reveal-btn" id="keepSecretBtn" type="button">
+        <span id="keepSecretLabel">Keep it secret</span>
+        <span class="button-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
+        </span>
+      </button>
+      <p class="reveal-foot">Shhh — half the fun is the surprise.</p>
+    </section>
+  </div>
+
+  <div class="overlay finale-overlay" id="finaleOverlay" hidden>
+    <div class="overlay-scrim"></div>
+    <section class="finale-card" role="dialog" aria-modal="true" aria-labelledby="finaleTitle">
+      <div class="finale-burst" aria-hidden="true">
+        <svg viewBox="0 0 120 120">
+          <path d="M60 4l6.6 45.4L104 24 75.4 57.4 116 60l-40.6 2.6L104 96 66.6 70.6 60 116l-6.6-45.4L16 96l28.6-33.4L4 60l40.6-2.6L16 24l37.4 25.4L60 4z"/>
+        </svg>
+      </div>
+      <p class="finale-kicker">The wheel has spoken</p>
+      <h2 id="finaleTitle">Six little secrets.<br><em>Ready to keep.</em></h2>
+      <p class="finale-copy" id="finaleCopy">Everyone has a match. Now the real magic is keeping quiet until gift day.</p>
+      <div class="finale-actions">
+        <button class="primary-btn" id="roundAgainBtn" type="button">
+          <span>New round, same crew</span>
+          <span class="button-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
+        </button>
+        <button class="secondary-btn" id="editNamesBtn" type="button">Edit the guest list</button>
+      </div>
+      <button class="host-link" id="hostListBtn" type="button">Host's secret list</button>
+    </section>
+  </div>
+
+  <dialog class="modal" id="howDialog" aria-labelledby="howTitle">
+    <button class="modal-close" type="button" data-close aria-label="Close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <p class="modal-kicker">Three tiny steps</p>
+    <h2 id="howTitle">How the wheel works</h2>
+    <ol class="how-list">
+      <li>
+        <span>01</span>
+        <div><strong>Add your crew</strong><p>Type each name and build the guest list — 3 to 16 people.</p></div>
+      </li>
+      <li>
+        <span>02</span>
+        <div><strong>Take your turn</strong><p>Pass the device to the named player. One spin reveals who they are buying for.</p></div>
+      </li>
+      <li>
+        <span>03</span>
+        <div><strong>Keep it quiet</strong><p>Only that player looks. The wheel handles the rest so every name is matched exactly once.</p></div>
+      </li>
+    </ol>
+    <div class="modal-note">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8.5 10V7.4a3.5 3.5 0 0 1 7 0V10"/></svg>
+      <p><strong>Fair by design.</strong> No one can draw themselves, and no name is handed out twice.</p>
+    </div>
+    <button class="primary-btn modal-done" type="button" data-close>Let's get merry</button>
+  </dialog>
+
+  <dialog class="modal confirm-modal" id="confirmDialog" aria-labelledby="confirmTitle">
+    <p class="modal-kicker">Hold your reindeer</p>
+    <h2 id="confirmTitle">Start a fresh draw?</h2>
+    <p class="confirm-copy">This ends the current round and returns you to the guest list. The names will be waiting for you.</p>
+    <div class="modal-actions">
+      <button class="secondary-btn" type="button" data-close>Keep playing</button>
+      <button class="danger-btn" id="confirmResetBtn" type="button">End this draw</button>
+    </div>
+  </dialog>
+
+  <dialog class="modal host-modal" id="hostDialog" aria-labelledby="hostTitle">
+    <button class="modal-close" type="button" data-close aria-label="Close secret list">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <p class="modal-kicker">Organizer only</p>
+    <h2 id="hostTitle">Host's secret list</h2>
+    <p class="host-warning">Careful — this reveals every match. Make sure the room isn't looking over your shoulder.</p>
+    <ul class="host-list" id="hostList"></ul>
+    <div class="host-actions">
+      <button class="secondary-btn" id="copyListBtn" type="button">Copy list</button>
+      <button class="primary-btn" type="button" data-close>Hide it again</button>
+    </div>
+    <p class="copy-status" id="copyStatus" role="status"></p>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
